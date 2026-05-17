@@ -1,0 +1,41 @@
+# Reference workflow — shows how Jules should run the scraper.
+# Jules uses this as a schedule reference; it can also be triggered manually
+# from GitHub Actions if you want a fallback runner.
+
+name: Daily PH News Scrape
+
+on:
+  schedule:
+    # 16:00 UTC = midnight Philippine time (UTC+8)
+    - cron: "0 16 * * *"
+  workflow_dispatch:  # allow manual trigger
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # needed for data branch worktree
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run scraper
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GITHUB_PAT: ${{ secrets.GITHUB_PAT }}
+          GITHUB_REPO: ${{ github.repository }}
+        run: python main.py
+
+      - name: Summary
+        if: always()
+        run: echo "Scrape job finished at $(date -u)"

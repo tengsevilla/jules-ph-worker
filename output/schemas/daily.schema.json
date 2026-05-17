@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DailyDigest",
+  "description": "One day of Philippine news, consolidated by topic. Multiple outlets covering the same event are merged into a single topic entry.",
+  "type": "object",
+  "required": ["date", "scraped_at", "raw_article_count", "topic_count", "topics"],
+  "properties": {
+    "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "scraped_at": { "type": "string", "format": "date-time" },
+    "raw_article_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Total articles scraped before consolidation."
+    },
+    "topic_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Unique news topics after consolidation."
+    },
+    "topics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "topic", "sources", "summary"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "topic": {
+            "type": "string",
+            "description": "Concise headline summarising the news event (6-10 words)."
+          },
+          "sources": {
+            "type": "array",
+            "description": "All outlet articles that cover this topic.",
+            "items": {
+              "type": "object",
+              "required": ["source", "url", "title"],
+              "properties": {
+                "source": { "type": "string" },
+                "url": { "type": "string", "format": "uri" },
+                "title": { "type": "string" },
+                "published_at": { "type": ["string", "null"] }
+              }
+            }
+          },
+          "summary": {
+            "type": "string",
+            "description": "Best summary from the source articles."
+          },
+          "classification": {
+            "oneOf": [
+              { "type": "null" },
+              {
+                "type": "object",
+                "required": ["category", "sentiment", "impact_level", "affected_sectors", "politicians", "gamification"],
+                "properties": {
+                  "category": {
+                    "type": "string",
+                    "enum": ["politics","economy","weather","health","crime","education","environment","disaster","international","sports","technology","social"]
+                  },
+                  "sentiment": { "type": "string", "enum": ["positive","negative","neutral"] },
+                  "impact_level": { "type": "string", "enum": ["national","regional","local"] },
+                  "affected_sectors": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "uniqueItems": true
+                  },
+                  "politicians": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["name", "position", "impact", "reason"],
+                      "properties": {
+                        "name": { "type": "string" },
+                        "position": { "type": "string" },
+                        "party": { "type": ["string", "null"] },
+                        "impact": { "type": "string", "enum": ["positive","negative","neutral"] },
+                        "reason": { "type": "string" }
+                      }
+                    }
+                  },
+                  "gamification": {
+                    "type": "object",
+                    "required": ["event_type", "severity", "affected_population_estimate"],
+                    "properties": {
+                      "event_type": {
+                        "type": "string",
+                        "enum": ["law_passed","bill_filed","calamity","price_hike","scandal","achievement","arrest","protest","election","budget","infrastructure","health_outbreak","trade_deal"]
+                      },
+                      "severity": { "type": "integer", "minimum": 1, "maximum": 5 },
+                      "affected_population_estimate": { "type": "string", "enum": ["all","majority","minority"] }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

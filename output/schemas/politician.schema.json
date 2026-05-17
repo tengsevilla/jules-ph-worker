@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PoliticianProfile",
+  "description": "Cumulative impact profile for a Philippine politician or public official.",
+  "type": "object",
+  "required": ["slug", "name", "position", "branch", "positive_count", "negative_count", "neutral_count", "impact_score", "last_updated", "impact_history"],
+  "properties": {
+    "slug": { "type": "string" },
+    "name": { "type": "string" },
+    "position": { "type": "string" },
+    "party": { "type": ["string", "null"] },
+    "branch": { "type": "string", "enum": ["executive", "legislative", "judicial"] },
+    "positive_count": { "type": "integer", "minimum": 0 },
+    "negative_count": { "type": "integer", "minimum": 0 },
+    "neutral_count": { "type": "integer", "minimum": 0 },
+    "impact_score": {
+      "type": "number",
+      "minimum": -1,
+      "maximum": 1,
+      "description": "(positive - negative) / total. Ranges from -1.0 (all negative) to +1.0 (all positive)."
+    },
+    "last_updated": { "type": "string", "format": "date-time" },
+    "impact_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["date", "article_id", "article_title", "article_url", "impact", "reason", "source"],
+        "properties": {
+          "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+          "article_id": { "type": "string" },
+          "article_title": { "type": "string" },
+          "article_url": { "type": "string", "format": "uri" },
+          "impact": { "type": "string", "enum": ["positive", "negative", "neutral"] },
+          "reason": { "type": "string" },
+          "source": { "type": "string" }
+        }
+      }
+    }
+  }
+}
