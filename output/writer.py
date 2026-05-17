@@ -188,6 +188,9 @@ class DataWriter:
 
         try:
             _run(["git", "fetch", "origin", "data"], check=False)
+            # Create local tracking branch if it doesn't exist (e.g. fresh clone on Jules VM)
+            if not _run(["git", "branch", "--list", "data"], check=False).stdout.strip():
+                _run(["git", "branch", "--track", "data", "origin/data"])
             _run(["git", "worktree", "add", str(worktree), "data"])
             yield worktree
         finally:
