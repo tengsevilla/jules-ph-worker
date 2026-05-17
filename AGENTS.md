@@ -74,12 +74,23 @@ This is a one-time step. After the branch exists, subsequent runs only need `pyt
 
 When creating the scheduled task, use this prompt exactly:
 
-> Run the daily Philippine news scraper. In the repository root, execute:
-> `python main.py`
+> **This is a data pipeline execution task, not a coding task. Do NOT run pytest. Do NOT do code review. Do NOT modify any source files.**
 >
-> This scrapes today's Philippine news from 10 sources (GMA, ABS-CBN, CNN PH, Inquirer, PhilStar, Manila Bulletin, Rappler, Senate, Congress, Official Gazette), classifies each article using Gemini AI, consolidates articles about the same event into single topic entries, and pushes the structured JSON to the `data` branch.
+> Execute this single command in the repository root and wait for it to finish:
 >
-> Do not modify any source files. Only run the script and allow it to push to the `data` branch.
+> ```
+> python main.py
+> ```
+>
+> The script handles everything: scraping 10 Philippine news sources, classifying articles with Gemini AI, and pushing structured JSON to the `data` branch. It will print progress and push to git automatically — no further action is needed from you.
+>
+> After `python main.py` completes, verify it succeeded by running:
+>
+> ```
+> git fetch origin data && git log origin/data --oneline -3
+> ```
+>
+> The top commit should be dated today and mention the number of topics (e.g., `data: 2026-05-17 — 34 topics`). If it is, the task is done.
 
 **Frequency:** Daily · **Time:** midnight Philippine time (UTC+8 = 16:00 UTC)
 
@@ -110,6 +121,7 @@ If ADC is unavailable, set `GEMINI_API_KEY` in the task environment and the scri
 
 | Symptom | Likely cause | Fix |
 |---------|-------------|-----|
+| Jules runs pytest / code review instead of the script | Jules misread the task as a coding task | Re-issue the task using the exact prompt above; it must start with "This is a data pipeline execution task, not a coding task." |
 | `0 articles` from Senate or Congress | Government site layout changed | Update CSS selectors in `scrapers/senate_gov.py` or `scrapers/congress_gov.py` |
 | RSS scraper returns 0 articles | Feed URL moved | Update `FEED_URLS` in the relevant scraper file |
 | `data` branch not found | Branch not bootstrapped | Run `bash startup.sh` once |
