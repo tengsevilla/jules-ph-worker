@@ -6,7 +6,7 @@ Philippine news scraper and civic impact classifier, designed to be run daily by
 
 1. **Scrapes** today's articles from 9 Philippine news and government sources
 2. **Classifies** each article using Google Gemini — category, sentiment, affected citizen archetypes, and politician impact ratings
-3. **Writes** structured JSON to the `data` branch of this repository
+3. **Writes** structured JSON to the `data/` folder on the `main` branch
 
 The output powers a gamified civic awareness system where every news event maps to citizen archetypes (Farmer, OFW, Driver, etc.) and tracks whether politicians are helping or hurting ordinary Filipinos over time.
 
@@ -16,11 +16,11 @@ The output powers a gamified civic awareness system where every news event maps 
 
 ```bash
 pip install -r requirements.txt
-python main.py            # full run: scrape → classify → push to data branch
+python main.py            # full run: scrape → classify → commit to data/ on main
 python main.py --dry-run  # prints JSON to stdout, no git push (safe for testing)
 ```
 
-For first-time setup (bootstraps the `data` branch), run `bash startup.sh` once before attaching to Jules.
+For first-time setup, run `bash startup.sh` once to install dependencies before attaching to Jules.
 After that, Jules' daily scheduled task runs `python main.py` directly — see `AGENTS.md` for the exact Jules UI configuration steps.
 
 ---
@@ -32,7 +32,7 @@ After that, Jules' daily scheduled task runs `python main.py` directly — see `
 | What | How Jules provides it |
 |------|-----------------------|
 | AI classification | Vertex AI via Application Default Credentials (VM service account) |
-| Git push to `data` branch | Existing repository credentials in the Jules VM |
+| Git push to `main` | Existing repository credentials in the Jules VM |
 
 **For local development**, copy `.env.example` to `.env` and fill in either:
 - `GOOGLE_CLOUD_PROJECT` + `gcloud auth application-default login` (Vertex AI / ADC), or
@@ -40,7 +40,7 @@ After that, Jules' daily scheduled task runs `python main.py` directly — see `
 
 ---
 
-## Data Output (`data` branch)
+## Data Output (`data/` folder on `main`)
 
 ```
 data/

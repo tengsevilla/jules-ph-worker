@@ -12,7 +12,7 @@ Each run it:
 1. Scrapes today's articles from 10 Philippine news and government outlets
 2. Classifies each article using Gemini AI — category, sentiment, affected citizen archetypes, and politician impact ratings
 3. Consolidates articles covering the same news event into a single topic entry
-4. Pushes the structured JSON output to the `data` branch of this repository
+4. Commits the structured JSON output to the `data/` folder on `main`
 
 The output is used by a gamified civic awareness platform that maps news to 35 citizen archetypes (Farmer, OFW, Driver, etc.) and tracks whether politicians help or hurt ordinary Filipinos over time.
 
@@ -24,7 +24,7 @@ The output is used by a gamified civic awareness platform that maps news to 35 c
 python main.py
 ```
 
-To test without pushing to the `data` branch:
+To test without pushing to git:
 
 ```bash
 python main.py --dry-run
@@ -46,9 +46,7 @@ Requires Python 3.10+.
 
 ## Jules UI — one-time setup steps
 
-Before creating the scheduled task, do these once:
-
-### 1. Initial Setup script (Configuration tab)
+Before creating the scheduled task, do this once:
 
 In Jules → left sidebar → select this repo → **Configuration tab → Initial Setup**, enter:
 
@@ -58,23 +56,13 @@ pip install -r requirements.txt
 
 Click **"Run and Snapshot"** to cache the environment for faster future runs.
 
-### 2. Bootstrap the `data` branch (run once locally or in a one-off Jules task)
-
-The `data` branch must exist before the scheduled task runs. Create it with:
-
-```bash
-bash startup.sh
-```
-
-This is a one-time step. After the branch exists, subsequent runs only need `python main.py`.
-
 ---
 
 ## Scheduled task prompt (copy-paste this into Jules)
 
 When creating the scheduled task, use this prompt exactly:
 
-> **This is a data pipeline execution task, not a coding task. Do NOT run pytest. Do NOT do code review. Do NOT modify any source files. Do NOT create a new branch — stay on `main`.**
+> **This is a data pipeline execution task, not a coding task. Do NOT run pytest. Do NOT do code review. Do NOT modify any source files. Do NOT create a new branch. Do NOT open a pull request. Stay on `main` for the entire task.**
 >
 > Execute this single command in the repository root and wait for it to finish:
 >
@@ -82,15 +70,15 @@ When creating the scheduled task, use this prompt exactly:
 > python main.py
 > ```
 >
-> The script handles everything: scraping 10 Philippine news sources, classifying articles with Gemini AI, and pushing structured JSON to the `data` branch. It will print progress and push to git automatically — no further action is needed from you.
+> The script handles everything: scraping 10 Philippine news sources, classifying articles with Gemini AI, and committing structured JSON to the `data/` folder on `main`. It pushes to `main` automatically — no further action is needed from you.
 >
 > After `python main.py` completes, verify it succeeded by running:
 >
 > ```
-> git fetch origin data && git log origin/data --oneline -3
+> git log origin/main --oneline -3
 > ```
 >
-> The top commit should be dated today and mention the number of topics (e.g., `data: 2026-05-17 — 34 topics`). If it is, the task is done. Commit any Jules task notes directly to `main` — do not open a pull request.
+> The top commit should be dated today and mention the number of topics (e.g., `data: 2026-05-17 — 34 topics`). If it is, the task is done.
 
 **Frequency:** Daily · **Time:** midnight Philippine time (UTC+8 = 16:00 UTC)
 
@@ -98,7 +86,7 @@ When creating the scheduled task, use this prompt exactly:
 
 ## Output location
 
-After a successful run, the `data` branch contains:
+After a successful run, the `data/` folder on `main` contains:
 
 ```
 data/
@@ -121,12 +109,11 @@ If ADC is unavailable, set `GEMINI_API_KEY` in the task environment and the scri
 
 | Symptom | Likely cause | Fix |
 |---------|-------------|-----|
-| Jules runs pytest / code review instead of the script | Jules misread the task as a coding task | Re-issue the task using the exact prompt above; it must start with "This is a data pipeline execution task, not a coding task." |
+| Jules runs pytest / code review instead of the script | Jules misread the task as a coding task | Re-issue the task using the exact prompt above |
+| Jules creates a new branch or PR | Jules ignored the no-branch instruction | Close the PR, delete the branch, re-issue the task |
 | `0 articles` from Senate or Congress | Government site layout changed | Update CSS selectors in `scrapers/senate_gov.py` or `scrapers/congress_gov.py` |
 | RSS scraper returns 0 articles | Feed URL moved | Update `FEED_URLS` in the relevant scraper file |
-| `data` branch not found | Branch not bootstrapped | Run `bash startup.sh` once |
 | Classification returns `None` for many articles | Gemini quota exceeded or ADC misconfigured | Check Vertex AI quota or set `GEMINI_API_KEY` |
-| `_data_wt` directory error | Previous run crashed mid-write | Run `git worktree prune` then retry |
 
 ---
 

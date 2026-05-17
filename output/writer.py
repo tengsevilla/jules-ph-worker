@@ -4,10 +4,8 @@ import json
 import re
 import subprocess
 import sys
-from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Generator
 
 from models.article import ConsolidatedArticle, DailyDigest, Sentiment
 from models.politician import ImpactRecord, PoliticianProfile
@@ -24,15 +22,14 @@ _TITLE_RE = re.compile(
     re.IGNORECASE,
 )
 
+DATA_DIR = Path("data")
+
 
 class DataWriter:
-    """Writes classified news data to the `data` branch of this repository.
+    """Writes classified news data to the data/ folder on the main branch.
 
     On Jules' VM, existing git credentials are used — no token needed.
     Pass github_repo + github_pat only for local development outside Jules.
-
-    Assumes the `data` branch already exists on the remote (startup.sh creates
-    it on first run).
     """
 
     def __init__(
@@ -48,25 +45,24 @@ class DataWriter:
             self._remote = "origin"
 
     def write_daily(self, digest: DailyDigest) -> None:
-        with self._data_worktree() as data_path:
-            # Idempotency guard: skip if today's digest already exists
-            daily_file = data_path / "daily" / f"{digest.date}.json"
-            if daily_file.exists():
-                print(f"  Digest for {digest.date} already exists — skipping write.")
-                return
+        # Idempotency guard: skip if today's digest already exists
+        daily_file = DATA_DIR / "daily" / f"{digest.date}.json"
+        if daily_file.exists():
+            print(f"  Digest for {digest.date} already exists — skipping write.")
+            return
 
-            print(f"  Writing daily digest for {digest.date}...")
-            self._write_daily_json(data_path, digest)
-            self._update_politician_profiles(data_path, digest)
-            self._update_sector_files(data_path, digest)
-            self._commit_and_push(data_path, digest.date, digest.topic_count)
+        print(f"  Writing daily digest for {digest.date}...")
+        self._write_daily_json(digest)
+        self._update_politician_profiles(digest)
+        self._update_sector_files(digest)
+        self._commit_and_push(digest.date, digest.topic_count)
 
     # ------------------------------------------------------------------
     # File writers
     # ------------------------------------------------------------------
 
-    def _write_daily_json(self, data_path: Path, digest: DailyDigest) -> None:
-        daily_dir = data_path / "daily"
+    def _write_daily_json(self, digest: DailyDigest) -> None:
+        daily_dir = DATA_DIR / "daily"
         daily_dir.mkdir(parents=True, exist_ok=True)
         out = daily_dir / f"{digest.date}.json"
         out.write_text(
@@ -75,8 +71,8 @@ class DataWriter:
         )
         print(f"    Wrote {out.name}")
 
-    def _update_politician_profiles(self, data_path: Path, digest: DailyDigest) -> None:
-        pol_dir = data_path / "politicians"
+    def _update_politician_profiles(self, digest: DailyDigest) -> None:
+        pol_dir = DATA_DIR / "politicians"
         pol_dir.mkdir(parents=True, exist_ok=True)
 
         mentions: dict[str, list] = {}
@@ -140,8 +136,8 @@ class DataWriter:
 
         print(f"    Updated {len(mentions)} politician profile(s)")
 
-    def _update_sector_files(self, data_path: Path, digest: DailyDigest) -> None:
-        sectors_dir = data_path / "sectors"
+    def _update_sector_files(self, digest: DailyDigest) -> None:
+        sectors_dir = DATA_DIR / "sectors"
         sectors_dir.mkdir(parents=True, exist_ok=True)
 
         sector_topics: dict[str, list[ConsolidatedArticle]] = {}
@@ -178,45 +174,24 @@ class DataWriter:
     # Git operations
     # ------------------------------------------------------------------
 
-    @contextmanager
-    def _data_worktree(self) -> Generator[Path, None, None]:
-        worktree = Path("_data_wt")
-
-        # Remove any stale worktree from a previous crashed run before starting
-        _run(["git", "worktree", "remove", str(worktree), "--force"], check=False)
-        _run(["git", "worktree", "prune"], check=False)
-
-        try:
-            _run(["git", "fetch", "origin", "data"], check=False)
-            # Create local tracking branch if it doesn't exist (e.g. fresh clone on Jules VM)
-            if not _run(["git", "branch", "--list", "data"], check=False).stdout.strip():
-                _run(["git", "branch", "--track", "data", "origin/data"])
-            _run(["git", "worktree", "add", str(worktree), "data"])
-            yield worktree
-        finally:
-            _run(["git", "worktree", "remove", str(worktree), "--force"], check=False)
-
-    def _commit_and_push(self, data_path: Path, date_str: str, topic_count: int) -> None:
-        _run(["git", "-C", str(data_path), "config", "user.email", "jules-bot@google.com"])
-        _run(["git", "-C", str(data_path), "config", "user.name", "Jules (automated)"])
-        _run(["git", "-C", str(data_path), "add", "."])
+    def _commit_and_push(self, date_str: str, topic_count: int) -> None:
+        _run(["git", "config", "user.email", "jules-bot@google.com"])
+        _run(["git", "config", "user.name", "Jules (automated)"])
+        _run(["git", "add", str(DATA_DIR)])
 
         commit_msg = f"data: {date_str} — {topic_count} topics"
-        result = _run(
-            ["git", "-C", str(data_path), "commit", "-m", commit_msg],
-            check=False,
-        )
+        result = _run(["git", "commit", "-m", commit_msg], check=False)
 
         stdout = result.stdout + result.stderr
         if result.returncode != 0:
             if "nothing to commit" in stdout or "nothing added to commit" in stdout:
-                print("    Nothing new to commit — data branch is already up to date.")
+                print("    Nothing new to commit — data is already up to date.")
                 return
             print(f"  git commit failed:\n  {stdout.strip()}", file=sys.stderr)
             result.check_returncode()
 
-        _run(["git", "-C", str(data_path), "push", self._remote, "data"])
-        print("    Pushed to data branch.")
+        _run(["git", "push", self._remote, "main"])
+        print("    Pushed to main.")
 
 
 # ------------------------------------------------------------------
