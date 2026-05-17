@@ -74,7 +74,7 @@ This is a one-time step. After the branch exists, subsequent runs only need `pyt
 
 When creating the scheduled task, use this prompt exactly:
 
-> **This is a data pipeline execution task, not a coding task. Do NOT run pytest. Do NOT do code review. Do NOT modify any source files.**
+> **This is a data pipeline execution task, not a coding task. Do NOT run pytest. Do NOT do code review. Do NOT modify any source files. Do NOT create a new branch — stay on `main`.**
 >
 > Execute this single command in the repository root and wait for it to finish:
 >
@@ -90,7 +90,7 @@ When creating the scheduled task, use this prompt exactly:
 > git fetch origin data && git log origin/data --oneline -3
 > ```
 >
-> The top commit should be dated today and mention the number of topics (e.g., `data: 2026-05-17 — 34 topics`). If it is, the task is done.
+> The top commit should be dated today and mention the number of topics (e.g., `data: 2026-05-17 — 34 topics`). If it is, the task is done. Commit any Jules task notes directly to `main` — do not open a pull request.
 
 **Frequency:** Daily · **Time:** midnight Philippine time (UTC+8 = 16:00 UTC)
 
